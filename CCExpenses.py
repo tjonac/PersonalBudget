@@ -5,21 +5,8 @@ class Expenses():
     def __init__(self, fileName: str, year: str):
         self.fileName = fileName
         self.year = year
-        self.pdfFileName = rf"Data\pdfFiles\{fileName}.pdf"
-        self.htmlFileName = rf"Data\htmlFiles\{fileName}.html"
-        doc = fitz.open(self.pdfFileName)
-        html = ''
-        for num_pagina in range(2,len(doc)):
-            pagina = doc.load_page(num_pagina)
-            html += pagina.get_text("html")
-
-        with open(self.htmlFileName, 'w', encoding="utf-8") as file:
-            file.write(html)
-
-        self.soup = BeautifulSoup(html, "lxml")
         self.headers = ["timestamp", "type", "description", "value"]
         self.data = []
-
 
     def to_num(x: str):
         return float(x.replace('$','').replace(',','').replace(' ',''))
@@ -60,7 +47,20 @@ class Expenses():
         return temp[0]+'-'+temp[1]+'-'+temp[2]
 
     def nu(self):
-        tags = self.soup.find_all("span")
+        op = "TCCNu" 
+        pdfFileName = rf"Data\pdfFiles\{op}\{self.fileName}.pdf"
+        htmlFileName = rf"Data\htmlFiles\{op}\{self.fileName}.html"
+        doc = fitz.open(pdfFileName)
+        html = ''
+        for num_pagina in range(2,len(doc)):
+            pagina = doc.load_page(num_pagina)
+            html += pagina.get_text("html")
+
+        with open(htmlFileName, 'w', encoding="utf-8") as file:
+            file.write(html)
+
+        soup = BeautifulSoup(html, "lxml")
+        tags = soup.find_all("span")
         i = 0
         while i < len(tags):
             tag = tags[i].text.strip()
@@ -77,9 +77,11 @@ class Expenses():
                     i+=1
                     tag = tags[i].text.strip()
                 self.data.append(temp)
+                
+        Expenses.save_to_csv(self, op)
 
-
-        with open(rf"Data\parsed\{self.fileName}.csv", 'w', newline='', encoding="utf-8") as csvFile:
+    def save_to_csv(self, op: str):
+        with open(rf"Data\parsed\{op}\{self.fileName}.csv", 'w', newline='', encoding="utf-8") as csvFile:
             writer = csv.writer(csvFile)
             writer.writerow(self.headers)
             writer.writerows(self.data)
